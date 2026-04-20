@@ -67,20 +67,14 @@ fn bigint_from_slice(slice: &[BigDigit]) -> BigInt {
 fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
     // Least-significant zeros have no effect on the output.
     if let Some(&0) = b.first() {
-        if let Some(nz) = b.iter().position(|&d| d != 0) {
-            b = &b[nz..];
-            acc = &mut acc[nz..];
-        } else {
-            return;
-        }
+        let nz = b.iter().position(|&d| d != 0).unwrap();
+        b = &b[nz..];
+        acc = &mut acc[nz..];
     }
     if let Some(&0) = c.first() {
-        if let Some(nz) = c.iter().position(|&d| d != 0) {
-            c = &c[nz..];
-            acc = &mut acc[nz..];
-        } else {
-            return;
-        }
+        let nz = c.iter().position(|&d| d != 0).unwrap();
+        c = &c[nz..];
+        acc = &mut acc[nz..];
     }
 
     let acc = acc;
