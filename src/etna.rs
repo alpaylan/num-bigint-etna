@@ -81,13 +81,15 @@ pub fn property_neg_isize_addassign(a: i64, b: i16) -> PropertyResult {
     }
 }
 
-/// Invariant: for every `bits` in `1..=19`, letting `x = 2^(2^bits) - 1`,
-/// `x * x == 2^(2^(bits+1)) - 2*x - 1`. The buggy implementation allocates
-/// an undersized product buffer (`x.len() + y.len()` instead of
-/// `x.len() + y.len() + 1`) and panics on carry.
+/// Invariant: letting `n = 1 << (8 + (bits_tag % 8))` so `n` ranges over
+/// `{256, 512, ..., 32768}` bits, for `x = 2^n - 1` the identity
+/// `x * x == 2^(2n) - 2*x - 1` holds. The buggy implementation allocates an
+/// undersized product buffer (`x.len() + y.len()` instead of
+/// `x.len() + y.len() + 1`), so at `n >= 2048` Karatsuba kicks in and the
+/// square either overruns the buffer or underflows an intermediate subtraction.
 pub fn property_mul_square_all_ones(bits_tag: u8) -> PropertyResult {
-    let bits = (bits_tag % 19) as u32 + 1;
-    let n: u32 = 1u32 << bits;
+    let shift = 8u32 + (bits_tag as u32 % 8);
+    let n: u32 = 1u32 << shift;
     let x = (BigUint::one() << n) - 1u32;
     let res = catch_unwind(AssertUnwindSafe(|| {
         let x2 = &x * &x;

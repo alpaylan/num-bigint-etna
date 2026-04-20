@@ -78,26 +78,29 @@ fn witness_neg_isize_addassign_case_positive() {
 }
 
 #[test]
-fn witness_mul_square_all_ones_case_8() {
+fn witness_mul_square_all_ones_case_4k() {
+    // shift = 8 + (4 % 8) = 12, n = 4096 bits
     assert_pass(
-        property_mul_square_all_ones(8),
-        "mul_square_all_ones/bits=8",
+        property_mul_square_all_ones(4),
+        "mul_square_all_ones/n=4096",
     );
 }
 
 #[test]
-fn witness_mul_square_all_ones_case_10() {
+fn witness_mul_square_all_ones_case_16k() {
+    // shift = 8 + (6 % 8) = 14, n = 16384 bits
     assert_pass(
-        property_mul_square_all_ones(10),
-        "mul_square_all_ones/bits=10",
+        property_mul_square_all_ones(6),
+        "mul_square_all_ones/n=16384",
     );
 }
 
 #[test]
-fn witness_mul_square_all_ones_case_13() {
+fn witness_mul_square_all_ones_case_32k() {
+    // shift = 8 + (7 % 8) = 15, n = 32768 bits
     assert_pass(
-        property_mul_square_all_ones(13),
-        "mul_square_all_ones/bits=13",
+        property_mul_square_all_ones(7),
+        "mul_square_all_ones/n=32768",
     );
 }
 
