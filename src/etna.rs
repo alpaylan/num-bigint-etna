@@ -71,7 +71,10 @@ pub fn property_neg_isize_addassign(a: i64, b: i16) -> PropertyResult {
     let mut x = BigInt::from(a);
     let bi = b as isize;
     AddAssign::<isize>::add_assign(&mut x, bi);
-    let expected = BigInt::from(a.wrapping_add(b as i64));
+    // Compute expected via BigInt arithmetic to avoid i64 wraparound at the
+    // boundary inputs; the surface under test is the isize-specific
+    // AddAssign routing, not any fixed-width wrap behavior.
+    let expected = BigInt::from(a) + BigInt::from(b as i64);
     if x == expected {
         PropertyResult::Pass
     } else {
