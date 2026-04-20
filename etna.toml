@@ -1,0 +1,73 @@
+# ETNA workload index for num-bigint.
+#
+# One [[variant]] per injected mutation. Source of truth for variant->property
+# mapping. Every other fact is derivable from the source tree:
+#   - ls patches/*.patch                   (patch-based variants)
+#   - grep -rn "pub fn property_" src/     (property functions)
+#   - grep -rn "fn witness_.*_case_" tests/ src/  (witness tests)
+#
+# Base commit for this workload is the HEAD of the bootstrap ancestor of all
+# etna/<variant> branches. Recover with: `git merge-base --octopus etna/*`.
+
+[[variant]]
+name = "is_multiple_of_zero_016c04a_1"
+property = "is_multiple_of_zero"
+injection = "patch"
+patch = "patches/is_multiple_of_zero_016c04a_1.patch"
+source_commit = "016c04ac4d6757d455578e1433b6001e35e73f71"
+witnesses = [
+    "witness_is_multiple_of_zero_case_zero",
+    "witness_is_multiple_of_zero_case_nonzero_small",
+    "witness_is_multiple_of_zero_case_nonzero_large",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/biguint.rs"]
+
+[[variant]]
+name = "mac3_all_zero_0940e50_1"
+property = "mul_square_all_ones"
+injection = "patch"
+patch = "patches/mac3_all_zero_0940e50_1.patch"
+source_commit = "0940e509dca55d19197adbe7cb5c1d5423a390cf"
+witnesses = [
+    "witness_mul_square_all_ones_case_32k",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/biguint/multiplication.rs"]
+
+[[variant]]
+name = "mul_undersized_buffer_8008707_1"
+property = "mul_square_all_ones"
+injection = "patch"
+patch = "patches/mul_undersized_buffer_8008707_1.patch"
+source_commit = "8008707fea97b9215f3b949a0eb6044aec709a31"
+witnesses = [
+    "witness_mul_square_all_ones_case_32k",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/biguint/multiplication.rs"]
+
+[[variant]]
+name = "neg_isize_promotion_3b13d9a_1"
+property = "neg_isize_addassign"
+injection = "patch"
+patch = "patches/neg_isize_promotion_3b13d9a_1.patch"
+source_commit = "3b13d9a20e649c928282f88531af8a07f03ef092"
+witnesses = [
+    "witness_neg_isize_addassign_case_small_negative",
+    "witness_neg_isize_addassign_case_zero_negative",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/macros.rs"]
+
+[[variant]]
+name = "scalar_div_zero_5dcf2a1_1"
+property = "scalar_div_by_zero_panics"
+injection = "patch"
+patch = "patches/scalar_div_zero_5dcf2a1_1.patch"
+source_commit = "5dcf2a1deb1b8e2e225521cb103ee90a8c70b666"
+witnesses = [
+    "witness_scalar_div_by_zero_panics_case_zero",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/biguint/division.rs"]

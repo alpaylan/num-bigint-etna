@@ -4,3 +4,5 @@ target
 *.orig
 # Per-run activity log, not workload state
 progress.jsonl
+# Hegel database cache
+.hegel/
