@@ -1,0 +1,32 @@
+Revert of commit 5dcf2a1deb1b8e2e225521cb103ee90a8c70b666.
+
+    Fix scalar divide-by-zero panics
+
+Applying this patch installs the bug: when `BigUint` has no digits (zero),
+`div_rem_digit` and `rem_digit` skip the explicit divide-by-zero panic and
+silently return zero instead of panicking.
+
+--- a/src/biguint/division.rs
++++ b/src/biguint/division.rs
+@@ -83,10 +83,6 @@
+
+ #[inline]
+ pub(super) fn div_rem_digit(mut a: BigUint, b: BigDigit) -> (BigUint, BigDigit) {
+-    if b == 0 {
+-        panic!("attempt to divide by zero")
+-    }
+-
+     let mut rem = 0;
+
+     if !FAST_DIV_WIDE && b <= big_digit::HALF {
+@@ -108,10 +104,6 @@
+
+ #[inline]
+ fn rem_digit(a: &BigUint, b: BigDigit) -> BigDigit {
+-    if b == 0 {
+-        panic!("attempt to divide by zero")
+-    }
+-
+     let mut rem = 0;
+
+     if !FAST_DIV_WIDE && b <= big_digit::HALF {

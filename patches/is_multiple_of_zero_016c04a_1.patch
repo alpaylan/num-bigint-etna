@@ -1,0 +1,20 @@
+Revert of commit 016c04ac4d6757d455578e1433b6001e35e73f71.
+
+    Fix is_multiple_of with a 0 arg
+
+Applying this patch installs the bug: `BigUint::is_multiple_of` falls through
+to `(self % other).is_zero()` when `other` is zero, panicking instead of
+returning `self.is_zero()`.
+
+--- a/src/biguint.rs
++++ b/src/biguint.rs
+@@ -283,9 +283,6 @@
+     /// Returns `true` if the number is a multiple of `other`.
+     #[inline]
+     fn is_multiple_of(&self, other: &BigUint) -> bool {
+-        if other.is_zero() {
+-            return self.is_zero();
+-        }
+         (self % other).is_zero()
+     }
+

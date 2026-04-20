@@ -2,3 +2,5 @@ Cargo.lock
 target
 *.bk
 *.orig
+# Per-run activity log, not workload state
+progress.jsonl

@@ -1,0 +1,38 @@
+Revert of commit 0940e509dca55d19197adbe7cb5c1d5423a390cf.
+
+    Fix a mac3 panic when an operand is all-zero
+
+Applying this patch installs the bug: `mac3` looks for a non-zero index in the
+low bytes with `.unwrap()`. When the Karatsuba/Toom recursion produces a
+sub-slice of operands `b` or `c` that begins with zero but is *entirely* zero,
+the `position` call returns `None` and `unwrap()` panics.
+
+--- a/src/biguint/multiplication.rs
++++ b/src/biguint/multiplication.rs
+@@ -67,19 +67,13 @@
+ fn mac3(mut acc: &mut [BigDigit], mut b: &[BigDigit], mut c: &[BigDigit]) {
+     // Least-significant zeros have no effect on the output.
+     if let Some(&0) = b.first() {
+-        if let Some(nz) = b.iter().position(|&d| d != 0) {
+-            b = &b[nz..];
+-            acc = &mut acc[nz..];
+-        } else {
+-            return;
+-        }
++        let nz = b.iter().position(|&d| d != 0).unwrap();
++        b = &b[nz..];
++        acc = &mut acc[nz..];
+     }
+     if let Some(&0) = c.first() {
+-        if let Some(nz) = c.iter().position(|&d| d != 0) {
+-            c = &c[nz..];
+-            acc = &mut acc[nz..];
+-        } else {
+-            return;
+-        }
++        let nz = c.iter().position(|&d| d != 0).unwrap();
++        c = &c[nz..];
++        acc = &mut acc[nz..];
+     }
+
+     let acc = acc;

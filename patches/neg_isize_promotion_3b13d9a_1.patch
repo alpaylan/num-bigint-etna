@@ -1,0 +1,18 @@
+Revert of commit 3b13d9a20e649c928282f88531af8a07f03ef092.
+
+    Fix promotion of negative isize
+
+Applying this patch installs the bug: `promote_signed_scalars_assign!` routes
+`isize` through `UsizePromotion` (u64), so a negative `isize` is reinterpreted
+as a huge positive value before being added/subtracted/multiplied/divided.
+
+--- a/src/macros.rs
++++ b/src/macros.rs
+@@ -372,6 +372,6 @@
+ macro_rules! promote_signed_scalars_assign {
+     (impl $imp:ident for $res:ty, $method:ident) => {
+         promote_scalars_assign!(impl $imp<i32> for $res, $method, i8, i16);
+-        promote_scalars_assign!(impl $imp<IsizePromotion> for $res, $method, isize);
++        promote_scalars_assign!(impl $imp<UsizePromotion> for $res, $method, isize);
+     }
+ }

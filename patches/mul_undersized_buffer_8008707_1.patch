@@ -1,0 +1,29 @@
+Revert of commit 8008707fea97b9215f3b949a0eb6044aec709a31.
+
+    Fix an undersized buffer panic in multiplication
+
+Applying this patch installs the bug: the product buffer in `mul3` and the
+Toom-2 Karatsuba intermediate in `mac3` are sized `x.len() + y.len()` instead
+of `x.len() + y.len() + 1`, so `(2^n - 1) * (2^n - 1)` overflows the buffer
+and the final `__add2` carry assertion fires.
+
+--- a/src/biguint/multiplication.rs
++++ b/src/biguint/multiplication.rs
+@@ -232,7 +232,7 @@
+
+         // We reuse the same BigUint for all the intermediate multiplies and have to size p
+         // appropriately here: x1.len() >= x0.len and y1.len() >= y0.len():
+-        let len = x1.len() + y1.len() + 1;
++        let len = x1.len() + y1.len();
+         let mut p = BigUint { data: vec![0; len] };
+
+         // p2 = x1 * y1
+@@ -408,7 +408,7 @@
+ }
+
+ fn mul3(x: &[BigDigit], y: &[BigDigit]) -> BigUint {
+-    let len = x.len() + y.len() + 1;
++    let len = x.len() + y.len();
+     let mut prod = BigUint { data: vec![0; len] };
+
+     mac3(&mut prod.data, x, y);
