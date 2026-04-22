@@ -1,73 +1,137 @@
-# ETNA workload index for num-bigint.
-#
-# One [[variant]] per injected mutation. Source of truth for variant->property
-# mapping. Every other fact is derivable from the source tree:
-#   - ls patches/*.patch                   (patch-based variants)
-#   - grep -rn "pub fn property_" src/     (property functions)
-#   - grep -rn "fn witness_.*_case_" tests/ src/  (witness tests)
-#
-# Base commit for this workload is the HEAD of the bootstrap ancestor of all
-# etna/<variant> branches. Recover with: `git merge-base --octopus etna/*`.
+name = "num-bigint"
+language = "rust"
+crate = "num-bigint"
+base_commit = "2d4e38b1b241ff2c1cb1ed4d55a8b8e12a979c2f"
 
-[[variant]]
-name = "is_multiple_of_zero_016c04a_1"
-property = "is_multiple_of_zero"
-injection = "patch"
-patch = "patches/is_multiple_of_zero_016c04a_1.patch"
-source_commit = "016c04ac4d6757d455578e1433b6001e35e73f71"
-witnesses = [
-    "witness_is_multiple_of_zero_case_zero",
-    "witness_is_multiple_of_zero_case_nonzero_small",
-    "witness_is_multiple_of_zero_case_nonzero_large",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+[[tasks]]
+mutations = ["is_multiple_of_zero_016c04a_1"]
+
+[tasks.source]
+repo = "https://github.com/rust-num/num-bigint"
+commits = ["016c04ac4d6757d455578e1433b6001e35e73f71"]
+commit_subjects = ["Fix is_multiple_of with a 0 arg"]
+summary = "`BigUint::is_multiple_of(&0)` fell through to `(self % other).is_zero()`, triggering a divide-by-zero panic. The fix adds an explicit `if other.is_zero() { return self.is_zero(); }` early-return so the zero-argument case is answered without division."
+
+[tasks.injection]
+kind = "patch"
 files = ["src/biguint.rs"]
+locations = [{ file = "src/biguint.rs" }]
+patch = "patches/is_multiple_of_zero_016c04a_1.patch"
 
-[[variant]]
-name = "mac3_all_zero_0940e50_1"
-property = "mul_square_all_ones"
-injection = "patch"
+[tasks.bug]
+short_name = "is_multiple_of_zero"
+invariant = "`BigUint::is_multiple_of(&0)` returns `true` iff the receiver is zero, and never panics."
+how_triggered = "the explicit `if other.is_zero() { return self.is_zero(); }` guard is removed, so `self.is_multiple_of(&zero)` falls through to `(self % other).is_zero()`, which divides by zero and panics."
+
+[[tasks.tasks]]
+property = "IsMultipleOfZero"
+witnesses = [
+  { test_fn = "witness_is_multiple_of_zero_case_zero" },
+  { test_fn = "witness_is_multiple_of_zero_case_nonzero_small" },
+  { test_fn = "witness_is_multiple_of_zero_case_nonzero_large" },
+]
+
+[[tasks]]
+mutations = ["mac3_all_zero_0940e50_1"]
+
+[tasks.source]
+repo = "https://github.com/rust-num/num-bigint"
+commits = ["0940e509dca55d19197adbe7cb5c1d5423a390cf"]
+commit_subjects = ["Fix a mac3 panic when an operand is all-zero"]
+summary = "`mac3` called `.unwrap()` on `iter.position(|&d| d != 0)`, assuming at least one non-zero digit. During Karatsuba/Toom-3 recursion on very large operands a sub-slice can become entirely zero, so `position` returns `None` and the unwrap panics. The fix replaces the unwrap with an `if let Some(nz) … else { return }` branch."
+
+[tasks.injection]
+kind = "patch"
+files = ["src/biguint/multiplication.rs"]
+locations = [{ file = "src/biguint/multiplication.rs" }]
 patch = "patches/mac3_all_zero_0940e50_1.patch"
-source_commit = "0940e509dca55d19197adbe7cb5c1d5423a390cf"
-witnesses = [
-    "witness_mul_square_all_ones_case_32k",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
-files = ["src/biguint/multiplication.rs"]
 
-[[variant]]
-name = "mul_undersized_buffer_8008707_1"
-property = "mul_square_all_ones"
-injection = "patch"
+[tasks.bug]
+short_name = "mac3_all_zero"
+invariant = "`BigUint` multiplication never panics for finite, well-formed inputs."
+how_triggered = "`mac3` replaces the `if let Some(nz) = iter.position(|&d| d != 0) { … } else { return }` fallback with `.unwrap()`. During Karatsuba/Toom-3 recursion on very large operands (e.g. `(2^32768 − 1)^2`) a sub-slice ends up entirely zero, so `position` returns `None` and the `unwrap` panics."
+
+[[tasks.tasks]]
+property = "MulSquareAllOnes"
+witnesses = [
+  { test_fn = "witness_mul_square_all_ones_case_32k" },
+]
+
+[[tasks]]
+mutations = ["mul_undersized_buffer_8008707_1"]
+
+[tasks.source]
+repo = "https://github.com/rust-num/num-bigint"
+commits = ["8008707fea97b9215f3b949a0eb6044aec709a31"]
+commit_subjects = ["Fix an undersized buffer panic in multiplication"]
+summary = "`mul3` allocated a product buffer of `x1.len() + y1.len()` digits, one digit short of what the Karatsuba recursion needs for an intermediate subtraction. The fix bumps the allocation to `x1.len() + y1.len() + 1` on both code paths."
+
+[tasks.injection]
+kind = "patch"
+files = ["src/biguint/multiplication.rs"]
+locations = [{ file = "src/biguint/multiplication.rs" }]
 patch = "patches/mul_undersized_buffer_8008707_1.patch"
-source_commit = "8008707fea97b9215f3b949a0eb6044aec709a31"
-witnesses = [
-    "witness_mul_square_all_ones_case_32k",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
-files = ["src/biguint/multiplication.rs"]
 
-[[variant]]
-name = "neg_isize_promotion_3b13d9a_1"
-property = "neg_isize_addassign"
-injection = "patch"
-patch = "patches/neg_isize_promotion_3b13d9a_1.patch"
-source_commit = "3b13d9a20e649c928282f88531af8a07f03ef092"
+[tasks.bug]
+short_name = "mul_undersized_buffer"
+invariant = "`(2^n − 1)^2 == 2^(2n) − 2·(2^n − 1) − 1`, computed without panicking, for any `n` up to the tested 32768 bits."
+how_triggered = "the product buffer size drops from `x1.len() + y1.len() + 1` to `x1.len() + y1.len()` in both `mul3` code paths, so at Karatsuba recursion the intermediate subtraction underflows or the buffer overruns."
+
+[[tasks.tasks]]
+property = "MulSquareAllOnes"
 witnesses = [
-    "witness_neg_isize_addassign_case_small_negative",
-    "witness_neg_isize_addassign_case_zero_negative",
+  { test_fn = "witness_mul_square_all_ones_case_32k" },
 ]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+
+[[tasks]]
+mutations = ["neg_isize_promotion_3b13d9a_1"]
+
+[tasks.source]
+repo = "https://github.com/rust-num/num-bigint"
+commits = ["3b13d9a20e649c928282f88531af8a07f03ef092"]
+commit_subjects = ["Fix promotion of negative isize"]
+summary = "`promote_signed_scalars_assign!` routed the `isize` `AddAssign` impl through `UsizePromotion`, so a negative `isize` was reinterpreted as a huge positive `usize` before addition. The fix routes `isize` through `IsizePromotion`, preserving the sign."
+
+[tasks.injection]
+kind = "patch"
 files = ["src/macros.rs"]
+locations = [{ file = "src/macros.rs" }]
+patch = "patches/neg_isize_promotion_3b13d9a_1.patch"
 
-[[variant]]
-name = "scalar_div_zero_5dcf2a1_1"
-property = "scalar_div_by_zero_panics"
-injection = "patch"
-patch = "patches/scalar_div_zero_5dcf2a1_1.patch"
-source_commit = "5dcf2a1deb1b8e2e225521cb103ee90a8c70b666"
+[tasks.bug]
+short_name = "neg_isize_promotion"
+invariant = "`BigInt::from(a) += (b as isize)` equals `BigInt::from(a) + BigInt::from(b as i64)` for all `a: i64, b: i16`."
+how_triggered = "`promote_signed_scalars_assign!` is changed so the `isize` `AddAssign` impl promotes through `UsizePromotion` instead of `IsizePromotion`, casting a negative `isize` to a huge positive `usize`."
+
+[[tasks.tasks]]
+property = "NegIsizeAddassign"
 witnesses = [
-    "witness_scalar_div_by_zero_panics_case_zero",
+  { test_fn = "witness_neg_isize_addassign_case_small_negative" },
+  { test_fn = "witness_neg_isize_addassign_case_zero_negative" },
 ]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+
+[[tasks]]
+mutations = ["scalar_div_zero_5dcf2a1_1"]
+
+[tasks.source]
+repo = "https://github.com/rust-num/num-bigint"
+commits = ["5dcf2a1deb1b8e2e225521cb103ee90a8c70b666"]
+commit_subjects = ["Fix scalar divide-by-zero panics"]
+summary = "`BigUint / u32` code paths lacked an explicit divide-by-zero check; when the dividend had no digits (i.e. was zero) the code silently returned `BigUint::zero()` instead of panicking, diverging from primitive `u32 / 0` semantics. The fix re-adds the explicit guards."
+
+[tasks.injection]
+kind = "patch"
 files = ["src/biguint/division.rs"]
+locations = [{ file = "src/biguint/division.rs" }]
+patch = "patches/scalar_div_zero_5dcf2a1_1.patch"
+
+[tasks.bug]
+short_name = "scalar_div_zero"
+invariant = "`BigUint / 0u32` must panic (mirroring `u32 / 0` semantics) regardless of the dividend."
+how_triggered = "the explicit divide-by-zero guards in the `BigUint / u32` paths are removed, so when the dividend has no digits (i.e. is zero) the code silently returns `BigUint::zero()` instead of panicking."
+
+[[tasks.tasks]]
+property = "ScalarDivByZeroPanics"
+witnesses = [
+  { test_fn = "witness_scalar_div_by_zero_panics_case_zero" },
+]

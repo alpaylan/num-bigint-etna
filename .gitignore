@@ -6,3 +6,6 @@ target
 progress.jsonl
 # Hegel database cache
 .hegel/
+.marauders/
+.migration-cache/
+etna.log
