@@ -1,5 +1,6 @@
 name = "num-bigint"
 language = "rust"
+strategies = ["proptest", "quickcheck", "crabcheck", "hegel"]
 crate = "num-bigint"
 base_commit = "2d4e38b1b241ff2c1cb1ed4d55a8b8e12a979c2f"
 
